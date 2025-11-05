@@ -1,0 +1,119 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Disable DirectorySlash to prevent trailing slash redirects
+DirectorySlash Off
+
+# Handle OPTIONS preflight requests FIRST - must return 200 without redirect
+# Route OPTIONS to PHP handler which sets CORS headers and exits
+RewriteCond %{REQUEST_METHOD} ^OPTIONS
+RewriteRule ^api/messages.* api/messages/options.php [L,QSA]
+RewriteCond %{REQUEST_METHOD} ^OPTIONS
+RewriteRule ^api/.* - [L]
+
+# Allow CORS
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Seller-ID, x-publishable-api-key"
+
+# Pass Authorization header to PHP (fix for Apache CGI/FastCGI mode)
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# API Routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Auth routes
+RewriteRule ^api/auth/login$ api/auth/login.php [L]
+RewriteRule ^api/auth/register$ api/auth/register.php [L]
+RewriteRule ^api/auth/me$ api/auth/me.php [L]
+RewriteRule ^api/auth/logout$ api/auth/logout.php [L]
+
+# Products routes (specific routes MUST come before general route)
+RewriteRule ^api/products/admin/?$ api/products/admin.php [L,QSA]
+RewriteRule ^api/products/approve/?$ api/products/approve.php [L,QSA]
+RewriteRule ^api/products/reject/?$ api/products/reject.php [L,QSA]
+RewriteRule ^api/products/create/?$ api/products/create.php [L,QSA]
+RewriteRule ^api/products/([0-9]+)/?$ api/products/show.php [L,QSA]
+RewriteRule ^api/products/?$ api/products/index.php [L,QSA]
+
+# Categories routes
+RewriteRule ^api/categories$ api/categories/index.php [L]
+
+# Geocoding routes
+RewriteRule ^api/geocoding/coordinates/?$ api/geocoding/coordinates.php [L,QSA]
+
+# Orders routes
+RewriteRule ^api/orders$ api/orders/index.php [L]
+RewriteRule ^api/orders/create$ api/orders/create.php [L]
+RewriteCond %{REQUEST_METHOD} PUT
+RewriteRule ^api/seller/orders/([0-9]+)/?$ api/orders/update.php?id=$1 [L,QSA]
+RewriteCond %{REQUEST_METHOD} PUT
+RewriteRule ^seller/orders/([0-9]+)/?$ api/orders/update.php?id=$1 [L,QSA]
+
+# Cart routes
+RewriteCond %{REQUEST_METHOD} PUT [OR]
+RewriteCond %{REQUEST_METHOD} PATCH
+RewriteRule ^api/cart/items/([0-9]+)/?$ api/cart/items/update.php?id=$1 [L,QSA]
+RewriteCond %{REQUEST_METHOD} DELETE
+RewriteRule ^api/cart/items/([0-9]+)/?$ api/cart/items/delete.php?id=$1 [L,QSA]
+RewriteRule ^api/cart/?$ api/cart/index.php [L,QSA]
+
+# Messages routes - OPTIONS is handled globally at top, so this handles GET/POST
+RewriteRule ^api/messages$ api/messages/index.php [L,QSA]
+RewriteRule ^api/messages/?$ api/messages/index.php [L,QSA]
+
+# Reviews routes
+RewriteRule ^api/reviews/create/?$ api/reviews/create.php [L,QSA]
+RewriteRule ^api/reviews/?$ api/reviews/index.php [L,QSA]
+
+# Addresses routes
+RewriteCond %{REQUEST_METHOD} PUT [OR]
+RewriteCond %{REQUEST_METHOD} PATCH
+RewriteRule ^api/addresses/([0-9]+)/?$ api/addresses/update.php?id=$1 [L,QSA]
+RewriteRule ^api/addresses/?$ api/addresses/index.php [L,QSA]
+
+# Sellers routes (Admin)
+RewriteRule ^api/sellers/test/?$ api/sellers/test.php [L,QSA]
+RewriteRule ^api/sellers/create/?$ api/sellers/create.php [L,QSA]
+RewriteRule ^api/sellers/approve/?$ api/sellers/approve.php [L,QSA]
+RewriteRule ^api/sellers/reject/?$ api/sellers/reject.php [L,QSA]
+RewriteRule ^api/sellers/?$ api/sellers/index.php [L,QSA]
+
+# Users routes (Admin)
+RewriteRule ^api/users/avatar/?$ api/users/upload-avatar.php [L,QSA]
+RewriteCond %{REQUEST_METHOD} PUT [OR]
+RewriteCond %{REQUEST_METHOD} PATCH
+RewriteRule ^api/users/password/?$ api/users/update-password.php [L,QSA]
+RewriteRule ^api/users/profile/?$ api/users/update-profile.php [L,QSA]
+RewriteRule ^api/users/approve/?$ api/users/approve.php [L,QSA]
+RewriteRule ^api/users/reject/?$ api/users/reject.php [L,QSA]
+RewriteRule ^api/users/([0-9]+)/addresses/?$ api/users/addresses.php [L,QSA]
+RewriteRule ^api/users/?$ api/users/index.php [L,QSA]
+
+# Seller routes
+RewriteRule ^api/seller/test/?$ api/seller/test.php [L,QSA]
+RewriteRule ^api/seller/products-test/?$ api/seller/products-test.php [L,QSA]
+RewriteRule ^api/seller/stats/?$ api/seller/stats.php [L,QSA]
+RewriteRule ^api/seller/customers/?$ api/seller/customers.php [L,QSA]
+RewriteRule ^api/seller/avatar/?$ api/seller/avatar.php [L,QSA]
+RewriteRule ^api/seller/me/?$ api/seller/me.php [L,QSA]
+# Seller products routes (specific routes MUST come before general route)
+RewriteCond %{REQUEST_METHOD} PUT [OR]
+RewriteCond %{REQUEST_METHOD} POST
+RewriteRule ^api/seller/products/([0-9]+)/?$ api/seller/products/update.php [L,QSA]
+RewriteCond %{REQUEST_METHOD} DELETE
+RewriteRule ^api/seller/products/([0-9]+)/?$ api/seller/products/delete.php [L,QSA]
+RewriteRule ^api/seller/products/?$ api/seller/products.php [L,QSA]
+
+# Seller stock locations routes
+RewriteCond %{REQUEST_METHOD} PUT
+RewriteRule ^api/seller/stock-locations/([0-9]+)/?$ api/seller/stock-locations.php [L,QSA]
+RewriteCond %{REQUEST_METHOD} DELETE
+RewriteRule ^api/seller/stock-locations/([0-9]+)/?$ api/seller/stock-locations.php [L,QSA]
+RewriteRule ^api/seller/stock-locations/?$ api/seller/stock-locations.php [L,QSA]
+
+# Default to index.php
+RewriteRule ^$ index.php [L]
+
